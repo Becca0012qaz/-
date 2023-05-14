@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql
+    container_name: db
+    restart: always
+    ports:
+      - 5678:3306
+    networks:
+      - net
+    volumes:
+      - ./database:/database
+      - ./data:/var/lib/mysql
+  app:
+    build: ./
+    container_name: app
+    restart: always
+    networks:
+      - net
+    volumes:
+      - ./app:/app
+    ports:
+      - 4999:5000
+    env_file:
+      - ./.env
+    depends_on:
+      - db
+
+  #以下是用docker 開seleniumn
+  selenium-wire:
+    image: selenium/hub:latest
+    container_name: selenium-wire
+    ports:
+      - "4442:4442"
+      - "4443:4443"
+      - "4444:4444"
+  chrome-test:
+    image: selenium/node-chrome:beta
+    shm_size: 2gb
+    depends_on:
+      - selenium-wire
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+networks:
+  net:
+    driver: bridge
